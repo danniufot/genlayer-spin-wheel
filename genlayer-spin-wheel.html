@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GenLayer Wheel of Fate</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gl-green: #00ff88;
+    --gl-dark: #0a0e1a;
+    --gl-card: #0f1628;
+    --gl-border: #1a2a4a;
+    --gl-text: #c8d8f0;
+    --gl-accent: #00c8ff;
+    --gl-orange: #ff8c00;
+    --glow-green: 0 0 20px #00ff8866, 0 0 40px #00ff8833;
+    --glow-blue: 0 0 20px #00c8ff66, 0 0 40px #00c8ff33;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--gl-dark);
+    font-family: 'Rajdhani', sans-serif;
+    color: var(--gl-text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, #001a3344 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, #00ff8811 0%, transparent 50%),
+      radial-gradient(ellipse at 60% 80%, #00c8ff0a 0%, transparent 50%);
+  }
+
+  /* Grid lines background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 30px 20px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .logo-tag {
+    display: inline-block;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--gl-green);
+    border: 1px solid var(--gl-green);
+    padding: 4px 14px;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(28px, 6vw, 52px);
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.1;
+    text-shadow: var(--glow-green);
+    letter-spacing: -1px;
+  }
+
+  h1 span { color: var(--gl-green); }
+
+  .subtitle {
+    margin-top: 10px;
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: #5a7a9a;
+    text-transform: uppercase;
+  }
+
+  .game-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    align-items: start;
+  }
+
+  @media (max-width: 650px) {
+    .game-layout { grid-template-columns: 1fr; }
+  }
+
+  /* WHEEL */
+  .wheel-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .wheel-wrapper {
+    position: relative;
+    width: 300px;
+    height: 300px;
+  }
+
+  .wheel-pointer {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 30px solid var(--gl-green);
+    filter: drop-shadow(0 0 8px var(--gl-green));
+    z-index: 10;
+  }
+
+  .wheel-outer {
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    border: 3px solid var(--gl-green);
+    box-shadow: var(--glow-green), inset 0 0 40px #00000066;
+    position: relative;
+    overflow: hidden;
+    transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+  }
+
+  canvas#wheelCanvas {
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+  }
+
+  .wheel-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    background: var(--gl-dark);
+    border: 3px solid var(--gl-green);
+    border-radius: 50%;
+    box-shadow: var(--glow-green);
+    z-index: 5;
+  }
+
+  .spin-btn {
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    background: transparent;
+    color: var(--gl-green);
+    border: 2px solid var(--gl-green);
+    padding: 14px 40px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+
+  .spin-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gl-green);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s;
+    z-index: -1;
+  }
+
+  .spin-btn:hover::before { transform: scaleX(1); }
+  .spin-btn:hover { color: var(--gl-dark); box-shadow: var(--glow-green); }
+  .spin-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .spin-btn:disabled::before { transform: scaleX(0); }
+  .spin-btn:disabled:hover { color: var(--gl-green); box-shadow: none; }
+
+  /* RIGHT PANEL */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .card {
+    background: var(--gl-card);
+    border: 1px solid var(--gl-border);
+    padding: 20px;
+    position: relative;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--gl-green);
+  }
+
+  .card-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--gl-green);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  /* Result display */
+  .result-display {
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .result-label {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: #3a5a7a;
+    text-transform: uppercase;
+  }
+
+  .result-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gl-green);
+    text-shadow: var(--glow-green);
+    word-break: break-word;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.5s ease;
+  }
+
+  .result-value.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .result-desc {
+    font-size: 13px;
+    color: var(--gl-text);
+    line-height: 1.5;
+    margin-top: 4px;
+    opacity: 0;
+    transition: opacity 0.5s ease 0.3s;
+  }
+
+  .result-desc.visible { opacity: 1; }
+
+  /* Segments editor */
+  .segments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .segments-list::-webkit-scrollbar { width: 4px; }
+  .segments-list::-webkit-scrollbar-track { background: #0a0e1a; }
+  .segments-list::-webkit-scrollbar-thumb { background: var(--gl-border); }
+
+  .segment-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .seg-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .seg-input {
+    flex: 1;
+    background: #060a14;
+    border: 1px solid var(--gl-border);
+    color: var(--gl-text);
+    padding: 6px 10px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .seg-input:focus { border-color: var(--gl-green); }
+
+  .seg-del {
+    background: none;
+    border: 1px solid #1a2a4a;
+    color: #3a5a7a;
+    width: 26px;
+    height: 26px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .seg-del:hover { border-color: #ff4466; color: #ff4466; }
+
+  .add-btn {
+    margin-top: 10px;
+    background: none;
+    border: 1px dashed var(--gl-border);
+    color: #3a5a7a;
+    padding: 8px;
+    cursor: pointer;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+    width: 100%;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .add-btn:hover { border-color: var(--gl-green); color: var(--gl-green); }
+
+  /* History */
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #4a6a8a;
+    padding: 4px 0;
+    border-bottom: 1px solid #0f1a2a;
+  }
+
+  .history-item:last-child { border-bottom: none; }
+
+  .history-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .history-name { color: var(--gl-text); font-weight: 600; }
+  .history-num { margin-left: auto; font-family: 'Orbitron', monospace; font-size: 10px; }
+
+  .empty-state {
+    color: #2a3a4a;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 10px 0;
+  }
+
+  /* Spin counter */
+  .stats-row {
+    display: flex;
+    gap: 16px;
+  }
+
+  .stat-box {
+    flex: 1;
+    background: #060a14;
+    border: 1px solid var(--gl-border);
+    padding: 12px;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: 'Orbitron', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--gl-accent);
+  }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #3a5a7a;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* Confetti burst */
+  .burst {
+    position: fixed;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  .particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    animation: burst-anim 1s ease-out forwards;
+  }
+
+  @keyframes burst-anim {
+    0% { transform: translate(0,0) rotate(0deg); opacity: 1; }
+    100% { transform: translate(var(--tx), var(--ty)) rotate(360deg); opacity: 0; }
+  }
+
+  @keyframes spin-glow {
+    0%, 100% { box-shadow: var(--glow-green), inset 0 0 40px #00000066; }
+    50% { box-shadow: 0 0 40px #00ff8899, 0 0 80px #00ff8844, inset 0 0 40px #00000066; }
+  }
+
+  .wheel-outer.spinning {
+    animation: spin-glow 0.5s ease-in-out infinite;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo-tag">⬡ GenLayer Protocol</div>
+    <h1>Wheel of <span>Fate</span></h1>
+    <p class="subtitle">Community Random Picker</p>
+  </header>
+
+  <div class="game-layout">
+
+    <!-- WHEEL -->
+    <div class="wheel-section">
+      <div class="wheel-wrapper">
+        <div class="wheel-pointer"></div>
+        <div class="wheel-outer" id="wheelOuter">
+          <canvas id="wheelCanvas" width="300" height="300"></canvas>
+        </div>
+        <div class="wheel-center"></div>
+      </div>
+      <button class="spin-btn" id="spinBtn" onclick="spinWheel()">⟳ SPIN</button>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-num" id="spinCount">0</div>
+          <div class="stat-label">Total Spins</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="uniqueCount">0</div>
+          <div class="stat-label">Unique Picks</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL -->
+    <div class="panel">
+
+      <!-- Result -->
+      <div class="card">
+        <div class="card-title">// Result</div>
+        <div class="result-display">
+          <div class="result-label" id="resultLabel">Awaiting spin...</div>
+          <div class="result-value" id="resultValue">—</div>
+          <div class="result-desc" id="resultDesc"></div>
+        </div>
+      </div>
+
+      <!-- Segments -->
+      <div class="card">
+        <div class="card-title">// Wheel Segments</div>
+        <div class="segments-list" id="segmentsList"></div>
+        <button class="add-btn" onclick="addSegment()">+ Add Segment</button>
+      </div>
+
+      <!-- History -->
+      <div class="card">
+        <div class="card-title">// Spin History</div>
+        <div class="history-list" id="historyList">
+          <div class="empty-state">No spins yet</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const COLORS = [
+    '#00ff88','#00c8ff','#ff8c00','#ff4488','#a855f7',
+    '#ffd700','#00ffcc','#ff6b35','#4ade80','#38bdf8'
+  ];
+
+  let segments = [
+    { label: 'Validator Node', desc: 'Run a GenLayer validator and help secure the network!' },
+    { label: 'Build a dApp', desc: 'Create a decentralized app on GenLayer using Intelligent Contracts.' },
+    { label: 'Write a Tutorial', desc: 'Help the community by documenting your GenLayer experience.' },
+    { label: 'Report a Bug', desc: 'Find and report issues to earn rewards from the protocol.' },
+    { label: 'Join Discord', desc: 'Engage with the GenLayer community on Discord.' },
+    { label: 'Design UI', desc: 'Contribute design assets and UI components to the ecosystem.' },
+    { label: 'Translate Docs', desc: 'Make GenLayer accessible globally by translating documentation.' },
+    { label: 'Submit Feedback', desc: 'Share your ideas and feedback to shape GenLayer\'s future.' },
+  ];
+
+  let isSpinning = false;
+  let spinCount = 0;
+  let history = [];
+  let currentAngle = 0;
+  let uniquePicks = new Set();
+
+  function drawWheel() {
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    const cx = 150, cy = 150, r = 148;
+    const total = segments.length;
+    ctx.clearRect(0, 0, 300, 300);
+
+    if (total === 0) {
+      ctx.fillStyle = '#0f1628';
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+
+    const arc = (Math.PI * 2) / total;
+
+    segments.forEach((seg, i) => {
+      const start = arc * i - Math.PI / 2;
+      const end = start + arc;
+      const color = COLORS[i % COLORS.length];
+
+      // Segment fill
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, start, end);
+      ctx.closePath();
+      ctx.fillStyle = i % 2 === 0 ? color + '22' : color + '11';
+      ctx.fill();
+      ctx.strokeStyle = color + '44';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Outer arc highlight
+      ctx.beginPath();
+      ctx.arc(cx, cy, r - 2, start, end);
+      ctx.strokeStyle = color + '88';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Text
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(start + arc / 2);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = color;
+      ctx.font = `bold ${Math.min(13, 110 / total)}px Rajdhani, sans-serif`;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 6;
+
+      const text = seg.label.length > 14 ? seg.label.slice(0, 13) + '…' : seg.label;
+      ctx.fillText(text, r - 12, 4);
+      ctx.restore();
+    });
+
+    // Center circle
+    ctx.beginPath();
+    ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+    ctx.fillStyle = '#0a0e1a';
+    ctx.fill();
+    ctx.strokeStyle = '#00ff88';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  function renderSegments() {
+    const list = document.getElementById('segmentsList');
+    list.innerHTML = '';
+    segments.forEach((seg, i) => {
+      const color = COLORS[i % COLORS.length];
+      const item = document.createElement('div');
+      item.className = 'segment-item';
+      item.innerHTML = `
+        <div class="seg-color" style="background:${color}"></div>
+        <input class="seg-input" value="${seg.label}" oninput="updateSegment(${i}, this.value)" placeholder="Segment name..." />
+        <button class="seg-del" onclick="removeSegment(${i})">×</button>
+      `;
+      list.appendChild(item);
+    });
+    drawWheel();
+  }
+
+  function updateSegment(i, val) {
+    segments[i].label = val;
+    drawWheel();
+  }
+
+  function removeSegment(i) {
+    if (segments.length <= 2) return;
+    segments.splice(i, 1);
+    renderSegments();
+  }
+
+  function addSegment() {
+    if (segments.length >= 10) return;
+    segments.push({ label: 'New Option', desc: 'Add a description for this option.' });
+    renderSegments();
+  }
+
+  function spinWheel() {
+    if (isSpinning || segments.length < 2) return;
+    isSpinning = true;
+
+    const btn = document.getElementById('spinBtn');
+    btn.disabled = true;
+
+    const outer = document.getElementById('wheelOuter');
+    outer.classList.add('spinning');
+
+    const extra = 1440 + Math.random() * 1440;
+    const targetAngle = currentAngle + extra;
+    const arc = 360 / segments.length;
+
+    outer.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+    outer.style.transform = `rotate(${targetAngle}deg)`;
+
+    setTimeout(() => {
+      const normalised = ((targetAngle % 360) + 360) % 360;
+      const pointer = (360 - normalised + 270) % 360;
+      const idx = Math.floor(pointer / arc) % segments.length;
+      const picked = segments[idx];
+      const color = COLORS[idx % COLORS.length];
+
+      currentAngle = targetAngle;
+      isSpinning = false;
+      outer.classList.remove('spinning');
+      btn.disabled = false;
+
+      // Result
+      const rv = document.getElementById('resultValue');
+      const rd = document.getElementById('resultDesc');
+      const rl = document.getElementById('resultLabel');
+
+      rv.style.color = color;
+      rv.style.textShadow = `0 0 20px ${color}66`;
+      rv.textContent = picked.label;
+      rd.textContent = picked.desc || '';
+      rl.textContent = 'Selected:';
+
+      rv.classList.remove('visible');
+      rd.classList.remove('visible');
+      void rv.offsetWidth;
+      rv.classList.add('visible');
+      rd.classList.add('visible');
+
+      // Stats
+      spinCount++;
+      uniquePicks.add(picked.label);
+      document.getElementById('spinCount').textContent = spinCount;
+      document.getElementById('uniqueCount').textContent = uniquePicks.size;
+
+      // History
+      history.unshift({ label: picked.label, color, num: spinCount });
+      if (history.length > 8) history.pop();
+      renderHistory();
+
+      // Burst
+      burst(color);
+
+    }, 4100);
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    if (history.length === 0) {
+      list.innerHTML = '<div class="empty-state">No spins yet</div>';
+      return;
+    }
+    list.innerHTML = history.map(h => `
+      <div class="history-item">
+        <div class="history-dot" style="background:${h.color}"></div>
+        <span class="history-name">${h.label}</span>
+        <span class="history-num">#${h.num}</span>
+      </div>
+    `).join('');
+  }
+
+  function burst(color) {
+    const el = document.createElement('div');
+    el.className = 'burst';
+    el.style.left = '50vw';
+    el.style.top = '40vh';
+    document.body.appendChild(el);
+    const colors = [color, '#ffffff', '#00ff88', '#00c8ff'];
+    for (let i = 0; i < 20; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const angle = (Math.random() * 360) * Math.PI / 180;
+      const dist = 60 + Math.random() * 120;
+      p.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
+      p.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+      p.style.background = colors[Math.floor(Math.random() * colors.length)];
+      p.style.animationDelay = Math.random() * 0.2 + 's';
+      el.appendChild(p);
+    }
+    setTimeout(() => el.remove(), 1500);
+  }
+
+  // Init
+  renderSegments();
+  renderHistory();
+</script>
+</body>
+</html>
