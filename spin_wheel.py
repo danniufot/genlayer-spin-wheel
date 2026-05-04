@@ -53,4 +53,12 @@ class SpinWheel(gl.Contract):
 
     @gl.public.view
     def get_last_result(self) -> str:
-        return
+        return self.last_result
+
+    @gl.public.view
+    def get_history(self) -> list:
+        return list(self.spin_history)
+
+    @gl.public.view
+    def get_tasks(self) -> list:
+        return list(self.tasks)
